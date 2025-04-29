@@ -5,42 +5,59 @@ module Fastlane
   module Actions
     class XccovAction < Action
       def self.run(params)
-        UI.message("The xccov plugin is working!")
+        UI.user_error!("No command specified. Use :view, :diff, or :merge") unless params[:command]
+
+        case params[:command]
+        when :view
+          return other_action.xccov_view(params.except(:command))
+        when :diff
+          return other_action.xccov_diff(params.except(:command))
+        when :merge
+          return other_action.xccov_merge(params.except(:command))
+        else
+          UI.user_error!("Unknown command: #{params[:command]}. Use :view, :diff, or :merge")
+        end
       end
 
       def self.description
-        "A fastlane plugin for xcov."
+        "A fastlane plugin for xccov tool that provides code coverage functionality"
       end
 
       def self.authors
-        ["Manish Rathi"]
+        ["crazymanish"]
       end
 
       def self.return_value
-        # If your method provides a return value, you can describe here what it does
+        "Returns the result of the xccov command execution"
       end
 
       def self.details
-        # Optional:
-        "A fastlane plugin for xcresulttool. 🚀"
+        "A fastlane plugin for the xccov tool that allows you to view, diff, and merge code coverage reports 🚀"
       end
 
       def self.available_options
         [
-          # FastlaneCore::ConfigItem.new(key: :your_option,
-          #                         env_name: "XCCOV_YOUR_OPTION",
-          #                      description: "A description of your option",
-          #                         optional: false,
-          #                             type: String)
+          FastlaneCore::ConfigItem.new(key: :command,
+                                  env_name: "XCCOV_COMMAND",
+                               description: "Which xccov command to run: view, diff, or merge",
+                                  optional: false,
+                                      type: Symbol,
+                             verify_block: proc do |value|
+                                             UI.user_error!("Command must be one of: :view, :diff, :merge") unless [:view, :diff, :merge].include?(value)
+                                           end)
         ]
       end
 
       def self.is_supported?(platform)
-        # Adjust this if your plugin only works for a particular platform (iOS vs. Android, for example)
-        # See: https://docs.fastlane.tools/advanced/#control-configuration-by-lane-and-by-platform
-        #
-        # [:ios, :mac, :android].include?(platform)
-        true
+        [:ios, :mac].include?(platform)
+      end
+
+      def self.example_code
+        [
+          'xccov(command: :view, file_path: "coverage.xcresult", json: true)',
+          'xccov(command: :diff, before_path: "before.xcresult", after_path: "after.xcresult", json: true)',
+          'xccov(command: :merge, reports: ["report1.xccovreport", "report2.xccovreport"], archives: ["archive1.xccovarchive", "archive2.xccovarchive"], out_report: "merged.xccovreport")'
+        ]
       end
     end
   end
